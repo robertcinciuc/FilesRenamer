@@ -35,20 +35,67 @@ public class Main {
 
         Collections.sort(filePaths);
 
+//        Check for intersecting segments
+        int segmentPos = checkIntersectingSegments(filePaths, index);
+
+        if(segmentPos == 0 || segmentPos == -1){
+            moveFilesSimpleCase(index, len, filePaths);
+        }else if(segmentPos == 1){
+            moveWhenTargetIsAbove(index, len, filePaths);
+        }
+
+    }
+
+    private static int checkIntersectingSegments(List<Path> filePaths, int targetStartIndex){
+        int firstFileNumber = Integer.parseInt(Files.getNameWithoutExtension(filePaths.get(0).getFileName().toString()));
+        int lastFileNumber = firstFileNumber + filePaths.size();
+
+        if(firstFileNumber == targetStartIndex){
+            return -2;
+        }
+
+        if(lastFileNumber < targetStartIndex || targetStartIndex + filePaths.size() < firstFileNumber){
+            return 0;
+        }
+
+        if(firstFileNumber < targetStartIndex && targetStartIndex < lastFileNumber){
+            return 1;
+        }else if(firstFileNumber > targetStartIndex){
+            return -1;
+        }
+
+        return 0;
+    }
+
+    private static void moveFilesSimpleCase(int targetIndex, int len, List<Path> filePaths) throws Exception {
         for(Path filePath : filePaths){
-            String actualFormat = "%0" + len + "d";
-            String fileExtension = Files.getFileExtension(filePath.getFileName().toString());
-            String newFullName = String.format(actualFormat, index) +  "." + fileExtension;
-            File newFile = new File(newFullName);
-            Path newFilePath = Paths.get(".", "resources", newFullName);
+            renameFile(targetIndex, len, filePath);
 
-            if(newFile.exists()){
-                throw new Exception("A file with the new name already exists");
-            }
-
-            java.nio.file.Files.move(filePath, newFilePath);
-
-            index++;
+            targetIndex++;
         }
     }
+
+    private static void moveWhenTargetIsAbove(int targetIndex, int len, List<Path> filePaths) throws Exception {
+        int upperTarget = targetIndex + filePaths.size() - 1;
+        for(int i = filePaths.size() - 1; i >= 0; --i){
+            renameFile(upperTarget, len, filePaths.get(i));
+
+            upperTarget--;
+        }
+    }
+
+    private static void renameFile(int index, int len, Path filePath) throws Exception {
+        String actualFormat = "%0" + len + "d";
+        String fileExtension = Files.getFileExtension(filePath.getFileName().toString());
+        String newFullName = String.format(actualFormat, index) +  "." + fileExtension;
+        File newFile = new File(newFullName);
+        Path newFilePath = Paths.get(".", "resources", newFullName);
+
+        if(newFile.exists()){
+            throw new Exception("A file with the new name already exists");
+        }
+
+        java.nio.file.Files.move(filePath, newFilePath);
+    }
+
 }
